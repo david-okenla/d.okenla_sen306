@@ -1,205 +1,99 @@
-// import java.util.Arrays;
 
 public class CustomerRefactored {
-    public static void main(String[] args) {
 
-        Customer customer = new Customer(
-                "John Doe",
-                "Premium",
-                "john@example.com",
-                true,
-                1
-        );
-
-        double[] orders = {120.50, 80.00, 50.25};
-
-        processCustomer(customer, orders);
-    }
-
-    /**
-     * Main procedure
-     */
-    public static void processCustomer(Customer customer, double[] orders) {
-
-        validateOrders(orders);
-        validateCustomerType(customer.getType());
-
-        double orderTotal = calculateOrderTotal(orders);
-
-        double discountRate = determineDiscountRate(customer.getTypeCode());
-
-        double finalTotal = calculateFinalTotal(orderTotal, discountRate);
-
-        String message = createCustomerMessage(customer, finalTotal);
-
-        displayMessage(message);
-
-        sendCustomerEmail(customer, message);
-    }
-
-    /**
-     * Calculates total value of orders
-     */
-    public static double calculateOrderTotal(double[] orders) {
-
-        double sum = 0;
-
-        for (double order : orders) {
-            sum += order;
+  
+    public static void validateCustomer(Customer c) {
+        if (c.name == null || c.name.isBlank())
+            throw new IllegalArgumentException("Customer name must not be empty.");
+        if (c.address == null || c.address.isBlank())
+            throw new IllegalArgumentException("Customer address must not be empty.");
+        if (c.orderCount < 0)
+            throw new IllegalArgumentException("Order count must be non-negative.");
+        if (c.orders == null || c.orders.length < c.orderCount)
+            throw new IllegalArgumentException("Orders array is too short for the given order count.");
+        for (int i = 0; i < c.orderCount; i++) {
+            if (c.orders[i] < 0)
+                throw new IllegalArgumentException(
+                    "Order amount at index " + i + " must be non-negative.");
         }
+        if (c.customerType != 0 && c.customerType != 1 && c.customerType != 2)
+            throw new IllegalArgumentException(
+                "Customer type must be 0 (standard), 1 (silver), or 2 (gold).");
+    }
 
+  
+    public static double orderTotal(Customer c) {
+        double sum = 0;
+        for (int i = 0; i < c.orderCount; i++) {
+            sum += c.orders[i];
+        }
         return sum;
     }
 
-    /**
-     * Determines discount percentage
-     */
-    public static double determineDiscountRate(int customerType) {
 
-        switch (customerType) {
-
-            case 1:
-                return 0.10;
-
-            case 2:
-                return 0.20;
-
-            default:
-                return 0.0;
-        }
+    public static double discountRate(int customerType) {
+        if (customerType == 1) return 0.10;   // silver – 10%
+        if (customerType == 2) return 0.20;   // gold   – 20%
+        return 0.0;                            // standard
     }
 
-    /**
-     * Calculates total after discount
-     */
-    public static double calculateFinalTotal(
-            double orderTotal,
-            double discountRate) {
-
-        return orderTotal - (orderTotal * discountRate);
-    }
-
-    /**
-     * Creates customer message
-     */
-    public static String createCustomerMessage(
-            Customer customer,
-            double finalTotal) {
-
-        String message =
-                "Hello " +
-                customer.getName() +
-                " of " +
-                customer.getType() +
-                ", your total is " +
-                finalTotal;
-
-        if (customer.isVip()) {
-            message += " (VIP)";
-        }
-
-        return message;
-    }
-
-    /**
-     * Displays output
-     */
-    public static void displayMessage(String message) {
-        System.out.println(message);
-    }
-
-    /**
-     * Sends email if available
-     */
-    public static void sendCustomerEmail(
-            Customer customer,
-            String message) {
-
-        if (customer.getEmail() != null &&
-                !customer.getEmail().isBlank()) {
-
-            System.out.println(
-                    "Email sent to " +
-                    customer.getEmail() +
-                    ": " +
-                    message);
-        }
-    }
-
-    /**
-     * Validation for order values
-     */
-    public static void validateOrders(double[] orders) {
-
-        if (orders == null || orders.length == 0) {
-            throw new IllegalArgumentException(
-                    "Orders cannot be empty.");
-        }
-
-        for (double order : orders) {
-
-            if (order < 0) {
-                throw new IllegalArgumentException(
-                        "Order values cannot be negative.");
-            }
-        }
-    }
-
-    /**
-     * Validation for customer type
-     */
-    public static void validateCustomerType(String type) {
-
-        if (type == null || type.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Customer type is required.");
-        }
-    }
-}
-
-/**
- * Customer class
- */
-class Customer {
-
-    private String name;
-    private String type;
-    private String email;
-    private boolean vip;
-    private int typeCode;
-
-    public Customer(
-            String name,
-            String type,
-            String email,
-            boolean vip,
-            int typeCode) {
-
-        this.name = name;
-        this.type = type;
-        this.email = email;
-        this.vip = vip;
-        this.typeCode = typeCode;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public boolean isVip() {
-        return vip;
-    }
-
-    public int getTypeCode() {
-        return typeCode;
-    }
     
+    public static double applyDiscount(double subtotal, double rate) {
+        return subtotal - subtotal * rate;
+    }
+
+    
+    public static String buildGreeting(Customer c, double total) {
+        String msg = "Hello " + c.name + " of " + c.address
+                   + ", your total is " + total;
+        if (c.isVip) msg += " (VIP)";
+        return msg;
+    }
+
+   
+    public static void sendNotification(Customer c, String message) {
+        System.out.println(message);
+        if (c.email != null && !c.email.isBlank()) {
+            sendEmail(c.email, message);
+        }
+    }
+
+    
+    public static void sendEmail(String email, String message) {
+        System.out.println("[EMAIL to " + email + "]: " + message);
+    }
+
+    
+    public static double processCustomer(Customer c) {
+        validateCustomer(c);
+
+        double subtotal = orderTotal(c);
+        double rate     = discountRate(c.customerType);
+        double total    = applyDiscount(subtotal, rate);
+
+        String greeting = buildGreeting(c, total);
+        sendNotification(c, greeting);
+
+        return total;  // caller does: c.balance = processCustomer(c);
+    }
+
+    
+    public static void main(String[] args) {
+        double[] orders = {150.0, 200.0, 50.0};
+
+        Customer alice = new Customer(
+            "Alice",          
+            "Lagos",           
+            0.0,              
+            2,                 
+            "alice@email.com", 
+            true,             
+            orders,         
+            3                 
+        );
+
+        
+        alice.balance = processCustomer(alice);
+        System.out.println("Updated balance: " + alice.balance);
+    }
 }
